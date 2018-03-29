@@ -7,7 +7,7 @@ import six
 
 from collections import namedtuple
 
-Platform = namedtuple('Platform', ['image_url', 'name'])
+Platform = namedtuple('Platform', ['name','versions'])
 
 
 class Emoji:
@@ -106,17 +106,26 @@ class Emoji:
             self._platforms = list()
             platform_section = self._soup.find('section',
                                                {'class': 'vendor-list'})
-            for vendor in platform_section.findAll(
-                    'div', {'class': 'vendor-rollout-target'}):
-                vendor_title = vendor.findNext('a')
-                vendor_img = vendor.find('div', {'class': 'vendor-image'})
+            for vendor in  platform_section.findAll(
+                    'div', {'class': 'vendor-rollout-container'}):
+                versions = []
+                for version in vendor.findAll('div', {'class': 'vendor-container'}):
+                    name = version.find('p', {'class': 'version-name'})
+                    version_title = None
+                    if name and name.find('a'):
+                        
+                        version_title = name.find('a').text
+                        title = name.find('a').attrs['href'].split("/")[1].lower()
 
-                title = vendor_title.text
-                platform_image = None
-                if vendor_img and vendor_img.find('img'):
-                    platform_image = vendor_img.find('img')['src']
+                    vendor_img = version.find('div', {'class': 'vendor-image'})
+                    platform_image = None
+                    if vendor_img and vendor_img.find('img'):
+                        platform_image = vendor_img.find('img')['data-srcset'][:-3]
+                    
+                    versions.append({"image_url": platform_image,"name":version_title})
 
-                platform = Platform(name=title, image_url=platform_image)
+        
+                platform = Platform(name=title, versions=versions)
                 self._platforms.append(platform)
         return self._platforms
 
